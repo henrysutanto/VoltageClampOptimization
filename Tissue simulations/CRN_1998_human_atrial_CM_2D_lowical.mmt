@@ -1,0 +1,625 @@
+[[model]]
+author: Cellml converter
+desc: """
+    Mathematical Model Of A Human Atrial Action Potential, 1998
+    Noble
+    Penny
+    Oxford University
+    Model Status
+    This model has been validated by Penny Noble
+    of Oxford University and is known to run in COR and PCEnv.
+    ValidateCellML
+    verifies this model as valid CellML, but detects unit inconsistencies.
+    Model Structure
+    The ionic mechanisms underlying many important properties
+    of the human atrial action potential are poorly understood.  Using specific
+    formulations of the K
+    +
+    , Na
+    +
+    and Ca
+    2+
+    currents based on experimental
+    data recorded from human atrial myocytes, along with representations of
+    pump, exchange and background currents, Marc Courtemanche, Rafael J.
+    Ramirez and Stanley Nattel developed a mathematical model of the action
+    potential (see the figure below).
+    This mathematical model builds mostly on
+    the classical work of Luo and Rudy (see The Luo-Rudy Ventricular Model II
+    (dynamic), 1994).  Courtemanche
+    et al
+    effectively develop a working model
+    of the human atrial action potential from the Luo-Rudy model which is based
+    on guinea pig ventricular cells.  Their primary goal was to develop a
+    useful model of the action potential from which they could gain insights
+    into experimental observations made on human atrial cells and tissues and
+    make predictions regarding the behaviour of these cells under previously
+    untested conditions
+    The complete original paper reference is cited below:
+    Ionic mechanisms underlying human atrial action potential properties:
+    insights from a mathematical model, Marc Courtemanche, Rafael J. Ramirez
+    and Stanley Nattel, 1998,
+    American Journal of Physiology
+    , 275, H301-H321.
+    PubMed ID: 9688927
+    schematic diagram of a human atrial myocyte
+    A schematic
+    representation of currents, pumps and exchangers included in the model.
+    The cell includes three intracellular compartments: cytoplasm, sarcoplasmic
+    reticulum (SR) release compartment [junctional SR (JSR)], and SR uptake
+    compartment [network SR (NSR)].
+    """
+name: courtemanche_1998
+# Initial values
+membrane.V                                        = -81.18
+fast_sodium_current_m_gate.m                      = 0.002908
+fast_sodium_current_h_gate.h                      = 0.9649
+fast_sodium_current_j_gate.j                      = 0.9775
+transient_outward_K_current_oa_gate.oa            = 0.03043
+transient_outward_K_current_oi_gate.oi            = 0.9992
+ultrarapid_delayed_rectifier_K_current_ua_gate.ua = 0.004966
+ultrarapid_delayed_rectifier_K_current_ui_gate.ui = 0.9986
+rapid_delayed_rectifier_K_current_xr_gate.xr      = 3.296e-5
+slow_delayed_rectifier_K_current_xs_gate.xs       = 0.01869
+L_type_Ca_channel_d_gate.d                        = 0.0001367
+L_type_Ca_channel_f_gate.f                        = 0.9996
+L_type_Ca_channel_f_Ca_gate.f_Ca                  = 0.7755
+Ca_release_current_from_JSR_u_gate.u              = 2.35e-112
+Ca_release_current_from_JSR_v_gate.v              = 1
+Ca_release_current_from_JSR_w_gate.w              = 0.9992
+intracellular_ion_concentrations.Na_i             = 11.17
+intracellular_ion_concentrations.K_i              = 139
+intracellular_ion_concentrations.Ca_i             = 0.0001013
+intracellular_ion_concentrations.Ca_up            = 1.488
+intracellular_ion_concentrations.Ca_rel           = 1.488
+
+[Ca_buffers]
+CMDN_max = 0.05
+    in [mM]
+CSQN_max = 10
+    in [mM]
+Ca_CMDN = CMDN_max * intracellular_ion_concentrations.Ca_i / (intracellular_ion_concentrations.Ca_i + Km_CMDN)
+    in [mM]
+Ca_CSQN = CSQN_max * intracellular_ion_concentrations.Ca_rel / (intracellular_ion_concentrations.Ca_rel + Km_CSQN)
+    in [mM]
+Ca_TRPN = TRPN_max * intracellular_ion_concentrations.Ca_i / (intracellular_ion_concentrations.Ca_i + Km_TRPN)
+    in [mM]
+Km_CMDN = 0.00238
+    in [mM]
+Km_CSQN = 0.8
+    in [mM]
+Km_TRPN = 0.0005
+    in [mM]
+TRPN_max = 0.07
+    in [mM]
+
+[Ca_leak_current_by_the_NSR]
+Ca_up_max = 15
+    in [mM]
+i_up_leak = Ca_uptake_current_by_the_NSR.I_up_max * intracellular_ion_concentrations.Ca_up / Ca_up_max
+    in [mM/ms]
+
+[Ca_release_current_from_JSR]
+Fn = 1000 [m^3*s/mol (0.001)] * (1e-15 [1/m^3 (1000000000000000000)] * parameters.V_rel * i_rel - 1e-15 [1/m^3 (1000000000000000000)] / (2 * parameters.F) * (0.5 * L_type_Ca_channel.i_Ca_L - 0.2 * Na_Ca_exchanger_current.i_NaCa))
+    in [1]
+K_rel = 30
+    in [mS/uF]
+i_rel = K_rel * Ca_release_current_from_JSR_u_gate.u ^ 2 * Ca_release_current_from_JSR_v_gate.v * Ca_release_current_from_JSR_w_gate.w * (intracellular_ion_concentrations.Ca_rel - intracellular_ion_concentrations.Ca_i)
+    in [mM/ms]
+
+[Ca_release_current_from_JSR_u_gate]
+tau_u = 8 [ms]
+    in [ms]
+dot(u) = (u_infinity - u) / tau_u
+    in [1]
+u_infinity = (1 + exp(-(Ca_release_current_from_JSR.Fn -  3.41749999999999983e-13) / 1.367e-15)) ^ (-1)
+    in [1]
+
+[Ca_release_current_from_JSR_v_gate]
+tau_v = 1.91 [ms] + 2.09 [ms] * (1 + exp(-(Ca_release_current_from_JSR.Fn -  3.41749999999999983e-13) / 1.367e-15)) ^ (-1)
+    in [ms]
+dot(v) = (v_infinity - v) / tau_v
+    in [1]
+v_infinity = 1 - (1 + exp(-(Ca_release_current_from_JSR.Fn - 6.835e-14) / 1.367e-15)) ^ (-1)
+    in [1]
+
+[Ca_release_current_from_JSR_w_gate]
+tau_w = piecewise(abs(membrane.V - 7.9 [mV]) < 1e-10 [mV], 6 [ms] * 0.2 / 1.3, 6 [ms] * (1 - exp(-(membrane.V - 7.9 [mV]) / 5 [mV])) / ((1 + 0.3 * exp(-(membrane.V - 7.9 [mV]) / 5 [mV])) * 1 [1/mV] * (membrane.V - 7.9 [mV])))
+    in [ms]
+dot(w) = (w_infinity - w) / tau_w
+    in [1]
+w_infinity = 1 - (1 + exp(-(membrane.V - 40 [mV]) / 17 [mV])) ^ (-1)
+    in [1]
+
+[Ca_uptake_current_by_the_NSR]
+I_up_max = 0.005
+    in [mM/ms]
+K_up = 0.00092
+    in [mM]
+i_up = I_up_max / (1 + K_up / intracellular_ion_concentrations.Ca_i)
+    in [mM/ms]
+
+[L_type_Ca_channel]
+ical_factor =1
+g_Ca_L = parameters.remodeling_AF_ICaL * 0.12375 * ical_factor
+    in [mS/uF]
+i_Ca_L = (1.0 - parameters.ICaL_block) * parameters.Cm * g_Ca_L * L_type_Ca_channel_d_gate.d * L_type_Ca_channel_f_gate.f * L_type_Ca_channel_f_Ca_gate.f_Ca * (membrane.V - 65 [mV])
+    in [pA]
+
+[L_type_Ca_channel_d_gate]
+dot(d) = (d_infinity - d) / tau_d
+    in [1]
+d_infinity = (1 + exp((membrane.V + 10 [mV]) / -8 [mV])) ^ (-1)
+    in [1]
+tau_d = piecewise(abs(membrane.V + 10 [mV]) < 1e-10 [mV], 4.579 [ms] / (1 + exp((membrane.V + 10 [mV]) / -6.24 [mV])), (1 - exp((membrane.V + 10 [mV]) / -6.24 [mV])) / (0.035 [1/mV/ms] * (membrane.V + 10 [mV]) * (1 + exp((membrane.V + 10 [mV]) / -6.24 [mV]))))
+    in [ms]
+
+[L_type_Ca_channel_f_Ca_gate]
+dot(f_Ca) = (f_Ca_infinity - f_Ca) / tau_f_Ca
+    in [1]
+f_Ca_infinity = (1 + intracellular_ion_concentrations.Ca_i / 0.00035 [mM]) ^ (-1)
+    in [1]
+tau_f_Ca = 2 [ms]
+    in [ms]
+
+[L_type_Ca_channel_f_gate]
+dot(f) = (f_infinity - f) / tau_f
+    in [1]
+f_infinity = exp(-(membrane.V + 28 [mV]) / 6.9 [mV]) / (1 + exp(-(membrane.V + 28 [mV]) / 6.9 [mV]))
+    in [1]
+tau_f = 9 [ms] * (0.0197 * exp(-0.0337 [1/mV] ^ 2 * (membrane.V + 10 [mV]) ^ 2) + 0.02) ^ (-1)
+    in [ms]
+
+[Na_Ca_exchanger_current]
+ncxfact = 1
+I_NaCa_max = parameters.remodeling_AF_NCX * 1600 * ncxfact
+    in [A/F]
+K_mCa = 1.38
+    in [mM]
+K_mNa = 87.5
+    in [mM]
+K_sat = 0.1
+    in [1]
+gamma = 0.35
+    in [1]
+i_NaCa = (1.0 - parameters.INCX_block) * parameters.Cm * I_NaCa_max * (exp(gamma * parameters.F * membrane.V / (parameters.R * parameters.T)) * intracellular_ion_concentrations.Na_i ^ 3 * standard_ionic_concentrations.Ca_o - exp((gamma - 1) * parameters.F * membrane.V / (parameters.R * parameters.T)) * standard_ionic_concentrations.Na_o ^ 3 * intracellular_ion_concentrations.Ca_i) / ((K_mNa ^ 3 + standard_ionic_concentrations.Na_o ^ 3) * (K_mCa + standard_ionic_concentrations.Ca_o) * (1 + K_sat * exp((gamma - 1) * membrane.V * parameters.F / (parameters.R * parameters.T))))
+    in [pA]
+
+[background_currents]
+E_Ca = parameters.R * parameters.T / (2 * parameters.F) * log(standard_ionic_concentrations.Ca_o / intracellular_ion_concentrations.Ca_i)
+    in [mV]
+g_B_Ca = 0.001131
+    in [mS/uF]
+g_B_K = 0
+    in [mS/uF]
+g_B_Na =  6.74437500000000015e-4
+    in [mS/uF]
+i_B_Ca = parameters.Cm * g_B_Ca * (membrane.V - E_Ca)
+    in [pA]
+i_B_K = parameters.Cm * g_B_K * (membrane.V - time_independent_potassium_current.E_K)
+    in [pA]
+i_B_Na = parameters.Cm * g_B_Na * (membrane.V - fast_sodium_current.E_Na)
+    in [pA]
+
+[environment]
+time = 0 bind time
+    in [ms]
+
+[fast_sodium_current]
+inafact = 1
+E_Na = parameters.R * parameters.T / parameters.F * log(standard_ionic_concentrations.Na_o / intracellular_ion_concentrations.Na_i)
+    in [mV]
+g_Na = parameters.remodeling_AF_INa * 7.8 * inafact
+    in [mS/uF]
+i_Na = (1.0 - parameters.INa_block) * parameters.Cm * g_Na * fast_sodium_current_m_gate.m ^ 3 * fast_sodium_current_h_gate.h * fast_sodium_current_j_gate.j * (membrane.V - E_Na)
+    in [pA]
+
+[fast_sodium_current_h_gate]
+alpha_h = piecewise(membrane.V < -40 [mV], 0.135 [mS/uF] * exp((membrane.V + 80 [mV]) / -6.8 [mV]), 0 [mS/uF])
+    in [mS/uF]
+beta_h = piecewise(membrane.V < -40 [mV], 3.56 [mS/uF] * exp(0.079 [1/mV] * membrane.V) + 310000 [mS/uF] * exp(0.35 [1/mV] * membrane.V), 1 / (0.13 [ms] * (1 + exp((membrane.V + 10.66 [mV]) / -11.1 [mV]))))
+    in [mS/uF]
+dot(h) = (h_inf - h) / tau_h
+    in [1]
+h_inf = alpha_h / (alpha_h + beta_h)
+    in [1]
+tau_h = 1 / (alpha_h + beta_h)
+    in [ms]
+
+[fast_sodium_current_j_gate]
+alpha_j = piecewise(membrane.V < -40 [mV], (-127140 [1/mV/ms] * exp(0.2444 [1/mV] * membrane.V) - 3.474e-5 [1/mV/ms] * exp(-0.04391 [1/mV] * membrane.V)) * (membrane.V + 37.78 [mV]) / (1 + exp(0.311 [1/mV] * (membrane.V + 79.23 [mV]))), 0 [mS/uF])
+    in [mS/uF]
+beta_j = piecewise(membrane.V < -40 [mV], 0.1212 [mS/uF] * exp(-0.01052 [1/mV] * membrane.V) / (1 + exp(-0.1378 [1/mV] * (membrane.V + 40.14 [mV]))), 0.3 [mS/uF] * exp(-2.535e-7 [1/mV] * membrane.V) / (1 + exp(-0.1 [1/mV] * (membrane.V + 32 [mV]))))
+    in [mS/uF]
+dot(j) = (j_inf - j) / tau_j
+    in [1]
+j_inf = alpha_j / (alpha_j + beta_j)
+    in [1]
+tau_j = 1 / (alpha_j + beta_j)
+    in [ms]
+
+[fast_sodium_current_m_gate]
+alpha_m = piecewise(membrane.V == -47.13 [mV], 3.2 [mS/uF], 0.32 [1/mV/ms] * (membrane.V + 47.13 [mV]) / (1 - exp(-0.1 [1/mV] * (membrane.V + 47.13 [mV]))))
+    in [mS/uF]
+beta_m = 0.08 [mS/uF] * exp(-membrane.V / 11 [mV])
+    in [mS/uF]
+dot(m) = (m_inf - m) / tau_m
+    in [1]
+m_inf = alpha_m / (alpha_m + beta_m)
+    in [1]
+tau_m = 1 / (alpha_m + beta_m)
+    in [ms]
+
+[intracellular_ion_concentrations]
+B1 = (2 * Na_Ca_exchanger_current.i_NaCa - (sarcolemmal_calcium_pump_current.i_CaP + L_type_Ca_channel.i_Ca_L + background_currents.i_B_Ca)) / (2 * parameters.V_i * parameters.F) + (parameters.V_up * (Ca_leak_current_by_the_NSR.i_up_leak - Ca_uptake_current_by_the_NSR.i_up) + Ca_release_current_from_JSR.i_rel * parameters.V_rel) / parameters.V_i
+    in [mM/ms]
+B2 = 1 + Ca_buffers.TRPN_max * Ca_buffers.Km_TRPN / (Ca_i + Ca_buffers.Km_TRPN) ^ 2 + Ca_buffers.CMDN_max * Ca_buffers.Km_CMDN / (Ca_i + Ca_buffers.Km_CMDN) ^ 2
+    in [1]
+dot(Ca_i) = B1 / B2
+    in [mM]
+dot(Ca_rel) = (transfer_current_from_NSR_to_JSR.i_tr - Ca_release_current_from_JSR.i_rel) * (1 + Ca_buffers.CSQN_max * Ca_buffers.Km_CSQN / (Ca_rel + Ca_buffers.Km_CSQN) ^ 2) ^ (-1)
+    in [mM]
+dot(Ca_up) = Ca_uptake_current_by_the_NSR.i_up - (Ca_leak_current_by_the_NSR.i_up_leak + transfer_current_from_NSR_to_JSR.i_tr * parameters.V_rel / parameters.V_up)
+    in [mM]
+dot(K_i) = (2 * sodium_potassium_pump.i_NaK - (time_independent_potassium_current.i_K1 + transient_outward_K_current.i_to + ultrarapid_delayed_rectifier_K_current.i_Kur + rapid_delayed_rectifier_K_current.i_Kr + slow_delayed_rectifier_K_current.i_Ks + background_currents.i_B_K)) / (parameters.V_i * parameters.F)
+    in [mM]
+dot(Na_i) = (-3 * sodium_potassium_pump.i_NaK - (3 * Na_Ca_exchanger_current.i_NaCa + background_currents.i_B_Na + fast_sodium_current.i_Na)) / (parameters.V_i * parameters.F)
+    in [mM]
+    
+[membrane]
+dot(V) = -(fast_sodium_current.i_Na + time_independent_potassium_current.i_K1 + transient_outward_K_current.i_to + ultrarapid_delayed_rectifier_K_current.i_Kur + rapid_delayed_rectifier_K_current.i_Kr + slow_delayed_rectifier_K_current.i_Ks + background_currents.i_B_Na + background_currents.i_B_Ca + sodium_potassium_pump.i_NaK + sarcolemmal_calcium_pump_current.i_CaP + Na_Ca_exchanger_current.i_NaCa + L_type_Ca_channel.i_Ca_L + Istim + Idiff) / parameters.Cm
+    in [mV]
+    label membrane_potential
+#i_st = piecewise(environment.time >= stim_start and environment.time <= stim_end and environment.time - stim_start - floor((environment.time - stim_start) / stim_period) * stim_period <= stim_duration, stim_amplitude, 0 [pA])
+#    in [pA]
+Istim = level * stim_amplitude
+stim_amplitude = -2000
+    in [pA]
+stim_duration = 2
+    in [ms]
+stim_end = 50000
+    in [ms]
+stim_period = 1000
+    in [ms]
+stim_start = 50
+    in [ms]
+level = 0 bind pace
+Idiff = 0 bind diffusion_current
+
+[rapid_delayed_rectifier_K_current]
+ikrfact =1
+g_Kr =  2.94117649999999994e-2 * ikrfact
+    in [mS/uF]
+i_Kr = (1.0 - parameters.IKr_block) * parameters.Cm * g_Kr * rapid_delayed_rectifier_K_current_xr_gate.xr * (membrane.V - time_independent_potassium_current.E_K) / (1 + exp((membrane.V + 15 [mV]) / 22.4 [mV]))
+    in [pA]
+
+[rapid_delayed_rectifier_K_current_xr_gate]
+alpha_xr = piecewise(abs(membrane.V + 14.1 [mV]) < 1e-10 [mV], 0.0015 [mS/uF], 0.0003 [1/mV/ms] * (membrane.V + 14.1 [mV]) / (1 - exp((membrane.V + 14.1 [mV]) / -5 [mV])))
+    in [mS/uF]
+beta_xr = piecewise(abs(membrane.V - 3.3328 [mV]) < 1e-10 [mV],  3.78361180000000004e-4 [mS/uF],  7.38980000000000030e-5 [1/mV/ms] * (membrane.V - 3.3328 [mV]) / (exp((membrane.V - 3.3328 [mV]) / 5.1237 [mV]) - 0.99))
+    in [mS/uF]
+tau_xr = (alpha_xr + beta_xr) ^ (-1)
+    in [ms]
+dot(xr) = (xr_infinity - xr) / tau_xr
+    in [1]
+xr_infinity = (1 + exp((membrane.V + 14.1 [mV]) / -6.5 [mV])) ^ (-1)
+    in [1]
+
+[sarcolemmal_calcium_pump_current]
+i_CaP = parameters.Cm * i_CaP_max * intracellular_ion_concentrations.Ca_i / (0.0005 [mM] + intracellular_ion_concentrations.Ca_i)
+    in [pA]
+i_CaP_max = 0.275
+    in [A/F]
+
+[slow_delayed_rectifier_K_current]
+iksfact = 1
+g_Ks =  parameters.remodeling_AF_IKs * 1.29411759999999987e-1 * iksfact
+    in [mS/uF]
+i_Ks = (1.0 - parameters.IKs_block) * parameters.Cm * g_Ks * slow_delayed_rectifier_K_current_xs_gate.xs ^ 2 * (membrane.V - time_independent_potassium_current.E_K)
+    in [pA]
+
+[slow_delayed_rectifier_K_current_xs_gate]
+alpha_xs = piecewise(abs(membrane.V - 19.9 [mV]) < 1e-10 [mV], 0.00068 [mS/uF], 4e-5 [1/mV/ms] * (membrane.V - 19.9 [mV]) / (1 - exp((membrane.V - 19.9 [mV]) / -17 [mV])))
+    in [mS/uF]
+beta_xs = piecewise(abs(membrane.V - 19.9 [mV]) < 1e-10 [mV], 0.000315 [mS/uF], 3.5e-5 [1/mV/ms] * (membrane.V - 19.9 [mV]) / (exp((membrane.V - 19.9 [mV]) / 9 [mV]) - 1))
+    in [mS/uF]
+tau_xs = 0.5 * (alpha_xs + beta_xs) ^ (-1)
+    in [ms]
+dot(xs) = (xs_infinity - xs) / tau_xs
+    in [1]
+xs_infinity = (1 + exp((membrane.V - 19.9 [mV]) / -12.7 [mV])) ^ (-0.5)
+    in [1]
+
+[sodium_potassium_pump]
+nakfact = 1
+Km_K_o = 1.5
+    in [mM]
+Km_Na_i = 10
+    in [mM]
+f_NaK = (1 + 0.1245 * exp(-0.1 * parameters.F * membrane.V / (parameters.R * parameters.T)) + 0.0365 * sigma * exp(-parameters.F * membrane.V / (parameters.R * parameters.T))) ^ (-1)
+    in [1]
+i_NaK = nakfact * (1.0 - parameters.INaK_block) * parameters.Cm * i_NaK_max * f_NaK * 1 / (1 + (Km_Na_i / intracellular_ion_concentrations.Na_i) ^ 1.5) * standard_ionic_concentrations.K_o / (standard_ionic_concentrations.K_o + Km_K_o)
+    in [pA]
+i_NaK_max =  5.99338739999999981e-1
+    in [A/F]
+sigma = 1 / 7 * (exp(standard_ionic_concentrations.Na_o / 67.3 [mM]) - 1)
+    in [1]
+
+[standard_ionic_concentrations]
+Ca_o = 1.8
+    in [mM]
+K_o = 5.4
+    in [mM]
+Na_o = 140
+    in [mM]
+
+[time_independent_potassium_current]
+ik1fact = 1
+E_K = parameters.R * parameters.T / parameters.F * log(standard_ionic_concentrations.K_o / intracellular_ion_concentrations.K_i)
+    in [mV]
+g_K1 = parameters.remodeling_AF_IK1 * 0.09 * ik1fact
+    in [mS/uF]
+i_K1 = (1.0 - parameters.IK1_block) * parameters.Cm * g_K1 * (membrane.V - E_K) / (1 + exp(0.07 [1/mV] * (membrane.V + 80 [mV])))
+    in [pA]
+
+[transfer_current_from_NSR_to_JSR]
+i_tr = (intracellular_ion_concentrations.Ca_up - intracellular_ion_concentrations.Ca_rel) / tau_tr
+    in [mM/ms]
+tau_tr = 180
+    in [ms]
+
+[transient_outward_K_current]
+tofact = 1
+K_Q10 = 3
+    in [1]
+g_to = parameters.remodeling_AF_Ito * 0.1652 * tofact
+    in [mS/uF]
+i_to = (1.0 - parameters.Ito_block) * parameters.Cm * g_to * transient_outward_K_current_oa_gate.oa ^ 3 * transient_outward_K_current_oi_gate.oi * (membrane.V - time_independent_potassium_current.E_K)
+    in [pA]
+
+[transient_outward_K_current_oa_gate]
+alpha_oa = 0.65 [mS/uF] * (exp((membrane.V - -10 [mV]) / -8.5 [mV]) + exp((membrane.V - -10 [mV] - 40 [mV]) / -59 [mV])) ^ (-1)
+    in [mS/uF]
+beta_oa = 0.65 [mS/uF] * (2.5 + exp((membrane.V - -10 [mV] + 72 [mV]) / 17 [mV])) ^ (-1)
+    in [mS/uF]
+dot(oa) = (oa_infinity - oa) / tau_oa
+    in [1]
+oa_infinity = (1 + exp((membrane.V - -10 [mV] + 10.47 [mV]) / -17.54 [mV])) ^ (-1)
+    in [1]
+tau_oa = (alpha_oa + beta_oa) ^ (-1) / transient_outward_K_current.K_Q10
+    in [ms]
+
+[transient_outward_K_current_oi_gate]
+alpha_oi = (18.53 [ms] + 1 [ms] * exp((membrane.V - -10 [mV] + 103.7 [mV]) / 10.95 [mV])) ^ (-1)
+    in [mS/uF]
+beta_oi = (35.56 [ms] + 1 [ms] * exp((membrane.V - -10 [mV] - 8.74 [mV]) / -7.44 [mV])) ^ (-1)
+    in [mS/uF]
+dot(oi) = (oi_infinity - oi) / tau_oi
+    in [1]
+oi_infinity = (1 + exp((membrane.V - -10 [mV] + 33.1 [mV]) / 5.3 [mV])) ^ (-1)
+    in [1]
+tau_oi = (alpha_oi + beta_oi) ^ (-1) / transient_outward_K_current.K_Q10
+    in [ms]
+
+[ultrarapid_delayed_rectifier_K_current]
+ikurfact = 1
+g_Kur = 0.005 [mS/uF] + 0.05 [mS/uF] / (1 + exp((membrane.V - 15 [mV]) / -13 [mV]))
+    in [mS/uF]
+i_Kur = ikurfact * parameters.remodeling_AF_IKur * (1.0 - parameters.IKur_block) * parameters.Cm * g_Kur * ultrarapid_delayed_rectifier_K_current_ua_gate.ua ^ 3 * ultrarapid_delayed_rectifier_K_current_ui_gate.ui * (membrane.V - time_independent_potassium_current.E_K)
+    in [pA]
+
+[ultrarapid_delayed_rectifier_K_current_ua_gate]
+alpha_ua = 0.65 [mS/uF] * (exp((membrane.V - -10 [mV]) / -8.5 [mV]) + exp((membrane.V - -10 [mV] - 40 [mV]) / -59 [mV])) ^ (-1)
+    in [mS/uF]
+beta_ua = 0.65 [mS/uF] * (2.5 + exp((membrane.V - -10 [mV] + 72 [mV]) / 17 [mV])) ^ (-1)
+    in [mS/uF]
+tau_ua = (alpha_ua + beta_ua) ^ (-1) / transient_outward_K_current.K_Q10
+    in [ms]
+dot(ua) = (ua_infinity - ua) / tau_ua
+    in [1]
+ua_infinity = (1 + exp((membrane.V - -10 [mV] + 20.3 [mV]) / -9.6 [mV])) ^ (-1)
+    in [1]
+
+[ultrarapid_delayed_rectifier_K_current_ui_gate]
+alpha_ui = (21 [ms] + 1 [ms] * exp((membrane.V - -10 [mV] - 195 [mV]) / -28 [mV])) ^ (-1)
+    in [mS/uF]
+beta_ui = 1 [mS/uF] / exp((membrane.V - -10 [mV] - 168 [mV]) / -16 [mV])
+    in [mS/uF]
+tau_ui = (alpha_ui + beta_ui) ^ (-1) / transient_outward_K_current.K_Q10
+    in [ms]
+dot(ui) = (ui_infinity - ui) / tau_ui
+    in [1]
+ui_infinity = (1 + exp((membrane.V - -10 [mV] - 109.45 [mV]) / 27.48 [mV])) ^ (-1)
+    in [1]
+    
+[parameters]
+Cm = 100
+    in [pF]
+F = 96.4867
+    in [C/mmol]
+R = 8.3143
+    in [J/mol/K]
+T = 310
+    in [K]  
+V_rel = 0.0048 * V_cell
+    in [um^3]
+V_cell = 20100
+    in [um^3]
+V_i = V_cell * 0.68
+    in [um^3]
+V_up = 0.0552 * V_cell
+    in [um^3]  
+        
+INa_block = 0
+ICaL_block = 0
+Ito_block = 0
+IK1_block = 0
+IKr_block = 0
+IKs_block = 0
+IKAch_block = 0
+IKur_block = 0
+INaK_block = 0
+INCX_block = 0
+INaL_block = 0
+
+AF = 0
+remodeling_AF_INa = if(AF>0, 0.9, 1.0)
+remodeling_AF_IKs = if(AF>0, 2.0, 1.0)
+remodeling_AF_IKur = if(AF>0, 0.45, 1.0)
+remodeling_AF_IK1 = if(AF>0, 2.0, 1.0)
+remodeling_AF_Ito = if(AF>0, 0.2, 1.0)
+remodeling_AF_ICaL = if(AF>0, 0.5, 1.0)
+remodeling_AF_NCX = if(AF>0, 1.4, 1.0)
+
+[[protocol]]
+# Level  Start    Length   Period   Multiplier
+1.0      10.0    2.0      1000.0   0
+
+[[script]]
+import matplotlib.pyplot as pl
+import myokit
+import numpy as np
+
+af = 0 #0
+calfact = 1.0
+ikrfact = 1.0
+ikurfact = 1.0
+ik1fact = 1.0
+iksfact = 1.0
+incxfact = 1.0
+itofact = 1.0
+inakfact = 1.0
+inafact = 0.5 #1.0
+
+### Personal variation 
+#na = 0 #0 #0.6 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+#to = 0.1 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+#cal = 0.4 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+#kur = 0.630331412762434 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+#kach = 0 #not available
+#kr = 0 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+#ks = 0.1 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+#k1 = 0.102115709983835 #0 #-2.0 #-1.0 #0.35 #0.15 #0.5 #0.25 #0
+#ncx = 0.090393466582999 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+#nak = -0.036186389878852 #0 #-2.0 #-1.0 #0.6 #0.75 #0.5 #0.25 #0
+#nal = 0 #not available
+
+### Personal variation + AF remodeling
+na = 0.114917378693662 #0 #0.6 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+to = 1.0 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+cal = 0.789226980247224 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+kur = 0.772650618267518 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+kach = 0 #not available
+kr = -0.035228357886033 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+ks = -0.926083386839043 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+k1 = -1.02769493583087 #0 #-2.0 #-1.0 #0.35 #0.15 #0.5 #0.25 #0
+ncx = -0.002439795710147 #0 #-2.0 #-1.0 #0.75 #0.5 #0.25 #0
+nak = 0.004894123878316 #0 #-2.0 #-1.0 #0.6 #0.75 #0.5 #0.25 #0
+nal = 0 #not available
+
+# Get model and protocol, create simulation
+m11 = get_model()
+
+bcl = 1000
+p11 = myokit.Protocol()
+p11.schedule(1,0,2.0,bcl,0)
+
+s11 = myokit.Simulation (m11, p11, apd_var='membrane.V')
+s11.set_constant("parameters.INa_block", na)
+s11.set_constant("parameters.Ito_block", to)
+s11.set_constant("parameters.ICaL_block", cal)
+s11.set_constant("parameters.IKur_block", kur)
+s11.set_constant("parameters.IKAch_block", kach)
+s11.set_constant("parameters.IKr_block", kr)
+s11.set_constant("parameters.IKs_block", ks)
+s11.set_constant("parameters.IK1_block", k1)
+s11.set_constant("parameters.INCX_block", ncx)
+s11.set_constant("parameters.INaK_block", nak)
+s11.set_constant("parameters.INaL_block", nal)
+s11.set_constant("parameters.AF", af)
+#s11.set_constant("L_type_Ca_channel.ical_factor", calfact)
+#s11.set_constant("rapid_delayed_rectifier_K_current.ikrfact", ikrfact)    
+#s11.set_constant("ultrarapid_delayed_rectifier_K_current.ikurfact", ikurfact) 
+#s11.set_constant("time_independent_potassium_current.ik1fact", ik1fact)
+#s11.set_constant("slow_delayed_rectifier_K_current.iksfact", iksfact)
+#s11.set_constant("Na_Ca_exchanger_current.ncxfact", incxfact)
+#s11.set_constant("transient_outward_K_current.tofact", itofact)
+#s11.set_constant("sodium_potassium_pump.nakfact", inakfact)
+s11.set_constant("fast_sodium_current.inafact", inafact)
+s11.pre (100*bcl)
+m11.set_state(s11.state())
+
+m11 = get_model()
+# Set up simulation
+n = 200
+dur = 100 
+s1s2 = 170
+ 
+#print myokit.OpenCL.selection_info()
+#print myokit.OpenCL.info(formatted=True)
+
+p11=myokit.pacing.blocktrain(500,5,0,1,0) #(period, duration, offset=0, level=1.0, limit=0)
+s11 = myokit.SimulationOpenCL(m11,p11, ncells=[n,n])
+s11.set_paced_cells(3,n,0,0)
+s11.set_conductance(270,270)######################## CV 50 cm/s
+s11.set_step_size(0.005)#0.005
+s11.set_constant("parameters.INa_block", na)
+s11.set_constant("parameters.Ito_block", to)
+s11.set_constant("parameters.ICaL_block", cal)
+s11.set_constant("parameters.IKur_block", kur)
+s11.set_constant("parameters.IKAch_block", kach)
+s11.set_constant("parameters.IKr_block", kr)
+s11.set_constant("parameters.IKs_block", ks)
+s11.set_constant("parameters.IK1_block", k1)
+s11.set_constant("parameters.INCX_block", ncx)
+s11.set_constant("parameters.INaK_block", nak)
+s11.set_constant("parameters.INaL_block", nal)    
+s11.set_constant("parameters.AF", af)           
+#s11.set_constant("L_type_Ca_channel.ical_factor", calfact)  
+#s11.set_constant("rapid_delayed_rectifier_K_current.ikrfact", ikrfact)     
+#s11.set_constant("ultrarapid_delayed_rectifier_K_current.ikurfact", ikurfact) 
+#s11.set_constant("time_independent_potassium_current.ik1fact", ik1fact)
+#s11.set_constant("slow_delayed_rectifier_K_current.iksfact", iksfact)
+#s11.set_constant("Na_Ca_exchanger_current.ncxfact", incxfact)
+#s11.set_constant("transient_outward_K_current.tofact", itofact)
+#s11.set_constant("sodium_potassium_pump.nakfact", inakfact)
+s11.set_constant("fast_sodium_current.inafact", inafact)
+#s11.pre(1000)
+
+# Set up logging
+log = ['environment.time', 'membrane.V'] # 'Ca_Concentrations.Ca_i', 'I_Ki.I_ki'
+
+#log = myokit.LOG_ALL
+#log = myokit.LOG_STATE + myokit.LOG_BOUND   
+
+log_interval = 10
+ 
+log = s11.run(dur, log=log, log_interval=log_interval)
+p2=myokit.pacing.blocktrain(500,2, s1s2,1,1)#normal stim duration=0.5
+s11.set_protocol(p2)
+s11.set_paced_cells(n/2,n/2,0,0)
+
+for i in range(1,9):
+    print 'i = %d' % i
+    log = s11.run(1500, log=log, log_interval=log_interval)
+    
+    block = log.block2d()
+    Vm = block.get2d('membrane.V')
+    maxval = np.max(Vm[len(Vm)-1].flatten())
+    print maxval
+    
+    if maxval < -50:
+        print 'no more activity detected'
+        break
+        
+# Store
+block = log.block2d()
+
+#block.save("SR_CRN1998_baseline_s1s2_" + str(s1s2) + ".zip")
+#block.save("SR_CRN1998_INaK_300pct_s1s2_" + str(s1s2) + ".zip")
+#block.save("CRN1998_s1s2_" + str(s1s2) + "_low_ICaL.zip")
+block.save("AF_CRN1998_s1s2_" + str(s1s2) + "_low_ICaL_0p5inafact.zip")
+    
+#except myokit.SimulationError as e:
+#   print(e.message)
+
